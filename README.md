@@ -29,7 +29,48 @@ Some prompts to answer:
 
 You can include a simple diagram or bullet list if helpful.
 
----
+--- This recommender uses a simple content-based design. That means it looks at the features of each song and compares them to the user’s stated preferences. Instead of learning from many users, it recommends songs that are most similar to what one user says they like.
+
+What features each Song uses
+Each song stores:
+
+genre — such as pop, lofi, rock, or ambient
+mood — such as happy, chill, intense, or focused
+energy — a number from 0 to 1 showing how calm or intense the song feels
+tempo_bpm — how fast the song is
+valence — how positive or upbeat the song feels
+danceability — how easy it is to move or dance to the song
+acousticness — how acoustic vs electronic the sound is
+The most important features in this system are genre, mood, energy, and acousticness.
+
+What the UserProfile stores
+The user profile keeps a small set of preferences:
+
+favorite_genre
+favorite_mood
+target_energy
+likes_acoustic
+These values act like a “taste profile” that the recommender uses as a target.
+
+How the Recommender computes a score
+For each song, the recommender gives points based on how well it matches the user:
+
+it adds a strong bonus if the genre matches
+it adds another bonus if the mood matches
+it gives a higher score when the song’s energy is closer to the user’s preferred energy
+it adds a small bonus if the song’s acousticness matches whether the user likes acoustic music
+So the system is not just checking if a song is “high energy” or “low energy.” It rewards songs that are closest to the user’s target.
+
+How songs are chosen
+After every song gets a score, the system:
+
+compares all the scores
+sorts the songs from highest to lowest
+returns the top few songs as recommendations
+Simple summary
+User preferences → compare with song features → assign scores → rank songs → recommend the top matches
+
+This design works well for a small classroom project because it is easy to understand, transparent, and simple to explain.
 
 ## Getting Started
 
