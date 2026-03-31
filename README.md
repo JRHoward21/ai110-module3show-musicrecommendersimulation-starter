@@ -252,5 +252,7 @@ A few sentences about what you learned:
 
 ## 10. Output Screenshot
 
-![Titles, scores, and reasons](<Screenshot 2026-03-30 165429-1.png>)
+https://1drv.ms/i/c/b3131aebb623beef/IQBX7mUo7ouTQYBEMRYNuHudAVOsQHmN1P6AE-0hkG0ndQo?e=5RBrVH
+
+
 

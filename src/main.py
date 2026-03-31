@@ -9,6 +9,8 @@ You will implement the functions in recommender.py:
 - recommend_songs
 """
 
+from pathlib import Path
+
 try:
     from .recommender import load_songs, recommend_songs
 except ImportError:
@@ -16,19 +18,92 @@ except ImportError:
 
 
 def main() -> None:
-    songs = load_songs("data/songs.csv")
+    project_root = Path(__file__).resolve().parents[1]
+    songs = load_songs(str(project_root / "data" / "songs.csv"))
 
-    # Specific user taste profile for recommendation comparisons
-    user_profile = {
+    # Define at least three user preference dictionaries
+    high_energy_pop = {
+        "favorite_genre": "pop",
+        "favorite_mood": "happy",
+        "target_energy": 0.9,
+        "likes_acoustic": False,
+        # Compatibility aliases for the starter functional interface
+        "genre": "pop",
+        "mood": "happy",
+        "energy": 0.9,
+    }
+
+    chill_lofi = {
         "favorite_genre": "lofi",
         "favorite_mood": "chill",
         "target_energy": 0.4,
         "likes_acoustic": True,
-        # Compatibility aliases for the starter functional interface
         "genre": "lofi",
         "mood": "chill",
         "energy": 0.4,
     }
+
+    deep_intense_rock = {
+        "favorite_genre": "rock",
+        "favorite_mood": "intense",
+        "target_energy": 0.85,
+        "likes_acoustic": False,
+        "genre": "rock",
+        "mood": "intense",
+        "energy": 0.85,
+    }
+
+    adversarial_profiles = {
+        "conflicting_vibe_user": {
+            "favorite_genre": "pop",
+            "favorite_mood": "sad",
+            "target_energy": 0.95,
+            "likes_acoustic": True,
+            "genre": "pop",
+            "mood": "sad",
+            "energy": 0.95,
+        },
+        "acoustic_party_rap_user": {
+            "favorite_genre": "hip hop",
+            "favorite_mood": "triumphant",
+            "target_energy": 0.90,
+            "likes_acoustic": True,
+            "genre": "hip hop",
+            "mood": "triumphant",
+            "energy": 0.90,
+        },
+        "unsupported_genre_user": {
+            "favorite_genre": "classical",
+            "favorite_mood": "focused",
+            "target_energy": 0.40,
+            "likes_acoustic": True,
+            "genre": "classical",
+            "mood": "focused",
+            "energy": 0.40,
+        },
+        "case_mismatch_user": {
+            "favorite_genre": "Pop",
+            "favorite_mood": "Happy",
+            "target_energy": 0.80,
+            "likes_acoustic": False,
+            "genre": "Pop",
+            "mood": "Happy",
+            "energy": 0.80,
+        },
+        "out_of_range_energy_user": {
+            "favorite_genre": "lofi",
+            "favorite_mood": "chill",
+            "target_energy": 1.40,
+            "likes_acoustic": True,
+            "genre": "lofi",
+            "mood": "chill",
+            "energy": 1.40,
+        },
+    }
+
+    # Choose one profile to test
+    user_profile = chill_lofi
+    # Example: user_profile = adversarial_profiles["conflicting_vibe_user"]
 
     recommendations = recommend_songs(user_profile, songs, k=5)
 
