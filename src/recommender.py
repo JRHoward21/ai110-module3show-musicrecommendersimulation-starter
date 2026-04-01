@@ -1,5 +1,42 @@
 from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass
+import math
+
+GENRE_ALIASES = {
+    "hip hop": "hip hop",
+    "rap": "hip hop",
+    "r&b": "r&b",
+    "indie pop": "indie pop",
+    "electronic": "electronic",
+    "synthwave": "synthwave",
+}
+
+MOOD_ALIASES = {
+    "chill": "chill",
+    "relaxed": "chill",
+    "calm": "chill",
+    "intense": "intense",
+    "happy": "happy",
+    "sad": "sad",
+    "triumphant": "triumphant",
+    "focused": "focused",
+    "moody": "moody",
+}
+
+DEFAULT_ENERGY_SIGMA = 0.25
+
+def normalize_label(value: Optional[str]) -> str:
+    if not isinstance(value, str):
+        return ""
+    return value.strip().lower()
+
+def canonical_genre(value: Optional[str]) -> str:
+    norm = normalize_label(value)
+    return GENRE_ALIASES.get(norm, norm)
+
+def canonical_mood(value: Optional[str]) -> str:
+    norm = normalize_label(value)
+    return MOOD_ALIASES.get(norm, norm)
 
 @dataclass
 class Song:
@@ -40,27 +77,27 @@ class Recommender:
     def recommend(self, user: UserProfile, k: int = 5) -> List[Song]:
         def score_song(song: Song, user: UserProfile) -> float:
             score = 0.0
-            
-            # Genre match: +2.0
-            if song.genre == user.favorite_genre:
-                score += 2.0
-            
-            # Mood match: +1.0
-            if song.mood == user.favorite_mood:
-                score += 1.0
-            
-            # Energy similarity: 2.0 * (1 - abs(diff))
-            energy_diff = abs(song.energy - user.target_energy)
-            score += 2.0 * (1 - energy_diff)
-            
-            # Acousticness: +0.5 if matches
-            if user.likes_acoustic:
-                if song.acousticness > 0.5:
-                    score += 0.5
-            else:
-                if song.acousticness <= 0.5:
-                    score += 0.5
-            
+
+            genre_score = 0.0
+            if canonical_genre(song.genre) == canonical_genre(user.favorite_genre):
+                genre_score = 1.0
+            score += genre_score
+
+            mood_score = 0.0
+            if canonical_mood(song.mood) == canonical_mood(user.favorite_mood):
+                mood_score = 1.0
+            score += mood_score
+
+            user_target_energy = max(0.0, min(1.0, user.target_energy))
+            energy_diff = abs(song.energy - user_target_energy)
+            energy_score = 4.0 * math.exp(-(energy_diff ** 2) / (2 * DEFAULT_ENERGY_SIGMA**2))
+            score += energy_score
+
+            acoustic_pref = user.likes_acoustic
+            acoustic_diff = abs(song.acousticness - (1.0 if acoustic_pref else 0.0))
+            acoustic_score = 0.5 * (1.0 - min(1.0, acoustic_diff))
+            score += acoustic_score
+
             return score
         
         scored = [(song, score_song(song, user)) for song in self.songs]
@@ -99,36 +136,35 @@ def score_song(song: Dict, user: Dict) -> Tuple[float, str]:
     score = 0.0
     reasons = []
 
-    genre_pref = user.get('favorite_genre', user.get('genre'))
-    mood_pref = user.get('favorite_mood', user.get('mood'))
+    genre_pref = canonical_genre(user.get('favorite_genre', user.get('genre', '')))
+    mood_pref = canonical_mood(user.get('favorite_mood', user.get('mood', '')))
     target_energy = float(user.get('target_energy', user.get('energy', 0.5)))
+    target_energy = max(0.0, min(1.0, target_energy))
     likes_acoustic = user.get('likes_acoustic', False)
 
-    # Genre match: +2.0
-    if song['genre'] == genre_pref:
-        score += 2.0
-        reasons.append("Genre match (+2.0)")
+    song_genre = canonical_genre(song.get('genre', ''))
+    song_mood = canonical_mood(song.get('mood', ''))
+    song_energy = float(song.get('energy', 0.0))
+    song_acoustic = float(song.get('acousticness', 0.0))
 
-    # Mood match: +1.0
-    if song['mood'] == mood_pref:
+    if song_genre == genre_pref and genre_pref:
+        score += 1.0
+        reasons.append("Genre match (+1.0)")
+
+    if song_mood == mood_pref and mood_pref:
         score += 1.0
         reasons.append("Mood match (+1.0)")
 
-    # Energy similarity: closer songs earn more points
-    energy_diff = abs(float(song['energy']) - target_energy)
-    energy_points = max(0.0, 2.0 * (1 - energy_diff))
+    energy_diff = abs(song_energy - target_energy)
+    energy_points = 4.0 * math.exp(-(energy_diff ** 2) / (2 * DEFAULT_ENERGY_SIGMA**2))
     score += energy_points
-    reasons.append(f"Energy closeness (+{energy_points:.1f})")
+    reasons.append(f"Energy similarity (+{energy_points:.2f})")
 
-    # Acousticness preference: +0.5 if it matches
-    if likes_acoustic:
-        if song['acousticness'] > 0.5:
-            score += 0.5
-            reasons.append("Acoustic preference match (+0.5)")
-    else:
-        if song['acousticness'] <= 0.5:
-            score += 0.5
-            reasons.append("Non-acoustic preference match (+0.5)")
+    acoustic_target = 1.0 if likes_acoustic else 0.0
+    acoustic_diff = abs(song_acoustic - acoustic_target)
+    acoustic_points = 0.5 * (1.0 - min(1.0, acoustic_diff))
+    score += acoustic_points
+    reasons.append(f"Acoustic closeness (+{acoustic_points:.2f})")
 
     explanation = ", ".join(reasons) if reasons else "No strong matches"
     return score, explanation

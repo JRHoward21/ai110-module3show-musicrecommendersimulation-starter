@@ -21,6 +21,11 @@ def main() -> None:
     project_root = Path(__file__).resolve().parents[1]
     songs = load_songs(str(project_root / "data" / "songs.csv"))
 
+    # Recommendation weight policy in recommender.py:
+    # - genre match is half importance (+1 instead of +2)
+    # - energy closeness is double importance (4x instead of 2x)
+    # - mood match remains +1 and acoustic preference remains +0.5
+    # (This is applied in both functional and OOP scoring logic.)
     # Define at least three user preference dictionaries
     high_energy_pop = {
         "favorite_genre": "pop",
